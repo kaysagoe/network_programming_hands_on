@@ -1,6 +1,6 @@
 import socket
 from typing import Tuple
-from mac_addresses.utils import mac_hex_to_bin
+from link_layer.mac_addresses.utils import mac_hex_to_bin
 from dataclasses import dataclass
 
 
