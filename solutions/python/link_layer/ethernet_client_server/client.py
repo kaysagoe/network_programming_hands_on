@@ -1,5 +1,5 @@
 from utils import create_ether_sock, send_frame
-from mac_addresses.utils import mac_hex_to_bin
+from link_layer.mac_addresses.utils import mac_hex_to_bin
 
 
 def main():

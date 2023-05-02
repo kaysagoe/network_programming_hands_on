@@ -1,5 +1,5 @@
 import sys
-from mac_addresses.utils import mac_bin_to_hex
+from link_layer.mac_addresses.utils import mac_bin_to_hex
 from utils import create_ether_sock, read_frame
 
 
