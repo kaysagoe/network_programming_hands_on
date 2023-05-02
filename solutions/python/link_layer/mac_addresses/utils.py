@@ -3,7 +3,7 @@ from binascii import unhexlify, hexlify
 
 
 def mac_hex_to_bin(address: bytes) -> bytes:
-    add_without_sep = address.replace(b":", b"")
+    add_without_sep = address.replace(b":", b"").strip()
 
     if len(add_without_sep) != 12:
         raise ValueError(
