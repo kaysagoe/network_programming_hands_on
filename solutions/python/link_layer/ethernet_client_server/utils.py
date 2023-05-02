@@ -33,16 +33,23 @@ def send_frame(sock_fd: socket.socket, host_mac: bytes, dest_mac: bytes, payload
 
 
 def read_frame(sock_fd: socket.socket, read_buffer: bytes) -> Tuple[Frame, bytes]:
-    if len(read_buffer) >= 14:
-        host_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
-        dest_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
-        length, read_buffer = _get_bytes_from_buffer(read_buffer, 2)
-        length_int = int.from_bytes(length)
+    if len(read_buffer) < 14:
+        read_buffer = _read_to_buffer(read_buffer, sock_fd)
+
+    host_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
+    dest_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
+    length, read_buffer = _get_bytes_from_buffer(read_buffer, 2)
+    length_int = int.from_bytes(length)
+
     if len(read_buffer) < length_int:
-        read_buffer = read_buffer + sock_fd.recv(1024)
+        read_buffer = _read_to_buffer(read_buffer, sock_fd)
     payload, read_buffer = _get_bytes_from_buffer(read_buffer, length_int - 14)
     return Frame(host_mac, dest_mac, length_int, payload), read_buffer
 
 
 def _get_bytes_from_buffer(buffer: bytes, length: int) -> Tuple[bytes, bytes]:
     return buffer[:length], buffer[length:]
+
+
+def _read_to_buffer(buffer: bytes, sock_fd: socket.socket) -> bytes:
+    return buffer + sock_fd.recv(1024)
