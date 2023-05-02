@@ -4,7 +4,7 @@ from utils import create_ether_sock, read_frame
 
 
 def main():
-    sock_fd = create_ether_sock(sys.argv[0])
+    sock_fd = create_ether_sock(sys.argv[1])
     read_buffer = bytes()
     while data := read_frame(sock_fd, read_buffer):
         frame, read_buffer = data
