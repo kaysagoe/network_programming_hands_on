@@ -7,7 +7,7 @@ def main():
         print("Send an Ethernet Frame")
 
         interface = input("Network Interface Name: ")
-        dest_mac = mac_hex_to_bin(input("Destination MAC Address: "))
+        dest_mac = mac_hex_to_bin(input("Destination MAC Address: ").encode("ascii"))
         payload = input("Payload: ")
 
         sock_fd, host_mac = create_ether_sock(interface)
