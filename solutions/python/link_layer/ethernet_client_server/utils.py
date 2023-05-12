@@ -1,7 +1,9 @@
+import re
 import socket
-from typing import Tuple
+import subprocess
+from typing import Tuple, List, Dict
 from link_layer.mac_addresses.utils import mac_hex_to_bin
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -10,6 +12,42 @@ class Frame:
     dest_mac: bytes
     length: int
     payload: bytes
+
+
+@dataclass
+class Host:
+    id: int = field(init=False)
+    name: str
+
+    def __post_init__(self):
+        self.id = int(self.name[5:])
+
+
+def get_virtual_hosts() -> List[Host]:
+    return sorted(
+        [
+            Host(name=match.group(1))
+            for ns in subprocess.run(
+                ["ip", "netns"], capture_output=True, encoding="utf-8"
+            ).stdout.splitlines()
+            if (match := re.search(r"^vhost(\d+).*", ns))
+        ],
+        reverse=True,
+        key=lambda host: host.id,
+    )
+
+
+def get_connecting_interfaces(host1: Host, host2: Host) -> Dict[Host, str]:
+    return {host1: f"veth_{host1.id}_{host2.id}", host2: f"veth_{host2.id}_{host1.id}"}
+
+
+def create_net_ns(name: str) -> None:
+    subprocess.run(["ip", "netns", "add", name], check=True)
+    subprocess.run(
+        ["ip", "netns", "exec", name, "ip", "link", "set", "dev", "lo", "up"],
+        check=True,
+    )
+    print(f"Virtual host ({name}) created")
 
 
 def interface_exists(name: str) -> bool:
