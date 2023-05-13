@@ -15,7 +15,9 @@ def main(host1: str, host2: str) -> None:
     interfaces = get_connecting_interfaces(host1_cls, host2_cls)
 
     # Check if a connection already exists
-    if interface_exists(interfaces["host1"]) and interface_exists(interfaces["host2"]):
+    if interface_exists(interfaces[host1_cls.id]) and interface_exists(
+        interfaces[host2_cls.id]
+    ):
         print(
             f"A connection between {host1_cls.name} and {host2_cls.name} already exists"
         )
@@ -23,17 +25,17 @@ def main(host1: str, host2: str) -> None:
 
     # Create new connection
     create_connect_cmds = [
-        f"ip link add {interfaces['host1']} type veth peer name {interfaces['host2']}",
-        f"ip link set {interfaces['host1']} netns {host1_cls.name}",
-        f"ip link set {interfaces['host2']} netns {host2_cls.name}",
-        f"ip netns exec {host1_cls.name} ip link set dev {interfaces['host1']} up",
-        f"ip netns exec {host2_cls.name} ip link set dev {interfaces['host2']} up",
+        f"ip link add {interfaces[host1_cls.id]} type veth peer name {interfaces[host2_cls.id]}",
+        f"ip link set {interfaces[host1_cls.id]} netns {host1_cls.name}",
+        f"ip link set {interfaces[host2_cls.id]} netns {host2_cls.name}",
+        f"ip netns exec {host1_cls.name} ip link set dev {interfaces[host1_cls.id]} up",
+        f"ip netns exec {host2_cls.name} ip link set dev {interfaces[host2_cls.id]} up",
     ]
     for cmd in create_connect_cmds:
         subprocess.run(cmd.split(), check=True)
     print(
-        f"Connection established between {interfaces['host1']} on {host1_cls.name} "
-        f"and {interfaces['host2']} on {host2_cls.name}"
+        f"Connection established between {interfaces[host1_cls.id]} on {host1_cls.name} "
+        f"and {interfaces[host2_cls.id]} on {host2_cls.name}"
     )
 
 

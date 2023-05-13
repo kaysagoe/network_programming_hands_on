@@ -27,10 +27,8 @@ def get_virtual_hosts() -> List[Host]:
     return sorted(
         [
             Host(name=match.group(1))
-            for ns in subprocess.run(
-                ["ip", "netns"], capture_output=True, encoding="utf-8"
-            ).stdout.splitlines()
-            if (match := re.search(r"^vhost(\d+).*", ns))
+            for ns in ["vhost3", "vhost2", "vhost1"]
+            if (match := re.search(r"^(vhost\d+).*", ns))
         ],
         reverse=True,
         key=lambda host: host.id,
@@ -38,7 +36,10 @@ def get_virtual_hosts() -> List[Host]:
 
 
 def get_connecting_interfaces(host1: Host, host2: Host) -> Dict[Host, str]:
-    return {host1: f"veth_{host1.id}_{host2.id}", host2: f"veth_{host2.id}_{host1.id}"}
+    return {
+        host1.id: f"veth_{host1.id}_{host2.id}",
+        host2.id: f"veth_{host2.id}_{host1.id}",
+    }
 
 
 def create_net_ns(name: str) -> None:
@@ -71,8 +72,8 @@ def create_ether_sock(interface: str) -> Tuple[socket.socket, bytes]:
 
 def send_frame(sock_fd: socket.socket, host_mac: bytes, dest_mac: bytes, payload: str):
     payload_bin = payload.encode("ascii")
-    length = (14 + len(payload_bin)).to_bytes(2)
-    data = host_mac + dest_mac + b"\x88\xB6" + length + payload.encode("ascii")
+    length = (16 + len(payload_bin)).to_bytes(2)
+    data = dest_mac + host_mac + b"\x88\xB6" + length + payload.encode("ascii")
     sock_fd.sendall(data)
 
 
@@ -80,13 +81,13 @@ def read_frame(sock_fd: socket.socket, read_buffer: bytes) -> Tuple[Frame, bytes
     if len(read_buffer) < 16:
         read_buffer = _read_to_buffer(read_buffer, sock_fd)
 
-    host_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
     dest_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
+    host_mac, read_buffer = _get_bytes_from_buffer(read_buffer, 6)
     ether_type, read_buffer = _get_bytes_from_buffer(read_buffer, 2)
     length, read_buffer = _get_bytes_from_buffer(read_buffer, 2)
     length_int = int.from_bytes(length)
 
-    if len(read_buffer) < length_int:
+    if len(read_buffer) < length_int - 16:
         read_buffer = _read_to_buffer(read_buffer, sock_fd)
     payload, read_buffer = _get_bytes_from_buffer(read_buffer, length_int - 16)
     return Frame(host_mac, dest_mac, length_int, payload), read_buffer
